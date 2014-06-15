@@ -1,7 +1,7 @@
 Reproducible Research Peer Assessment 1
 ========================================================
 
-This markdown file was generated at Sun Jun 15 7:36:54 AM 2014 UTC.
+This markdown file was generated on Sun Jun 15 3:52:32 PM 2014 UTC using R version 3.0.3 (2014-03-06).
 
 ## Introduction
 
@@ -18,30 +18,33 @@ setwd("~/GitHub/RepData_PeerAssessment1-1")
 Sys.setlocale("LC_TIME", "English")
 suppressPackageStartupMessages(require(data.table))
 suppressPackageStartupMessages(require(ggplot2))
+suppressPackageStartupMessages(require(scales))
 options(scipen = 1, digits = 7)
 fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 if(!file.exists("activity.csv")){
-        download.file(fileUrl, destfile="activity_monitoring_data.zip", 
+        download.file(fileUrl, destfile = "activity_monitoring_data.zip", 
                       method="auto")       
         unzip("activity_monitoring_data.zip")
 }
-activityData <- data.table(read.csv("activity.csv",header = TRUE, sep = ",",
-        na.strings = "NA", colClasses=c("numeric","Date","numeric")))
+activityData <- data.table(read.csv("activity.csv", header = TRUE, sep = ",",
+        na.strings = "NA", colClasses = c("numeric", "Date", "numeric")))
+activityData$interval <- sprintf("%04d", activityData$interval)
+activityData$interval <- as.POSIXct(activityData$interval, format = "%H%M")
 ```
 
-First the working directory was established.  *Note: if the reader wishes to execute the code herein, he/she may need to change the working directory.*  Next two packages are loaded: [data.table](http://cran.r-project.org/web/packages/data.table/index.html) for efficient processing of data tables and [ggplot2](http://ggplot2.org/) for producing the plots. Finally the data were downloaded and loaded in as a data.table.
+First the working directory was established.  *Note: if the reader wishes to execute the code herein, he/she may need to change the working directory.*  Next two packages are loaded: [data.table](http://cran.r-project.org/web/packages/data.table/index.html) for efficient processing of data tables, [ggplot2](http://ggplot2.org/) for producing the plots, and [scales](http://cran.r-project.org/web/packages/scales/index.html) for aid in formatting axes on plots. Finally the data were downloaded and loaded in as a data.table.
 
 
 ## What is mean total number of steps taken per day?
 
 
 ```r
-transformedDataByDate <- activityData[,list(total=sum(steps)),by=date]
-stepsMean <- round(mean(transformedDataByDate$total,na.rm=TRUE))
-stepsMedian <- round(median(transformedDataByDate$total,na.rm=TRUE))
-ggplot(transformedDataByDate, aes(x=total)) + geom_histogram(color="blue", fill
-        ="white", binwidth = 1000) + geom_vline(aes(xintercept=stepsMedian), 
-        color="red", linetype="dashed", size=1) + ylim(0, 18) + 
+transformedDataByDate <- activityData[, list(total = sum(steps)), by = date]
+stepsMean <- round(mean(transformedDataByDate$total, na.rm = TRUE))
+stepsMedian <- round(median(transformedDataByDate$total, na.rm = TRUE))
+ggplot(transformedDataByDate, aes(x = total)) + geom_histogram(color = "blue", 
+        fill = "white", binwidth = 1000) + geom_vline(aes(xintercept = 
+        stepsMedian), color = "red", linetype = "dashed", size=1) + ylim(0, 18) + 
         ggtitle("Total Number of Steps Taken Per Day: Missing Data Ignored") + 
         xlab("Number of steps per day") + ylab("Count") + theme_bw()
 ```
@@ -59,36 +62,37 @@ The median number of steps, rounded to the nearest step,  taken per day was **10
 
 
 ```r
-transformedDataByInterval <- activityData[,list(average=mean(steps,na.rm=TRUE)),
-        by=interval]
-ggplot(transformedDataByInterval,aes(x=interval,y=average))+ 
-        geom_line(color="blue") + ggtitle("Average Daily Activity Pattern")+  
-        ylab("Number of Steps") + theme_bw()
+transformedDataByInterval <- activityData[, list(average = mean(steps, na.rm = 
+        TRUE)), by=interval]
+ggplot(transformedDataByInterval, aes(x = interval, y = average)) + 
+        geom_line(color = "blue") + ggtitle("Average Daily Activity Pattern") +  
+        ylab("Number of Steps") + xlab("Time of Day") + 
+        scale_x_datetime(labels = date_format("%H:%M"), breaks = 
+        date_breaks("2 hours")) + theme_bw()
 ```
 
 ![plot of chunk avgdailypattern](figure/avgdailypattern.png) 
 
 ```r
-maxInterval<-transformedDataByInterval[which.max(transformedDataByInterval$average),
-        interval]
-maxInterval<-paste(maxInterval-5," and ",maxInterval)
+maxInterval<-strftime(transformedDataByInterval[which.max(
+        transformedDataByInterval$average),interval], format = "%H:%M")
 ```
 
 Next the average daily activity pattern was plotted.  
 
-The 5-minute interval, on average across all the days in the dataset, containing 
-the maximum number of steps is the interval between **830  and  835** seconds.
+The time, on average across all the days in the dataset, containing 
+the maximum number of steps occurs at **08:35**.
 
 
 ## Determing the effect of imputing missing values
 
 
 ```r
-numberNA <- length(is.na(activityData$steps)[is.na(activityData$steps)==TRUE])
+numberNA <- length(is.na(activityData$steps)[is.na(activityData$steps) == TRUE])
 imputedActivityData <- activityData
 imputedActivityData$steps <- ifelse(is.na(activityData$steps), 
         transformedDataByInterval[match(activityData$interval, 
-        transformedDataByInterval$interval),transformedDataByInterval$average], 
+        transformedDataByInterval$interval), transformedDataByInterval$average], 
         activityData$steps)
 ```
 
@@ -99,16 +103,16 @@ As a result, missing values were imputed by substituting the mean for that 5-min
 
 
 ```r
-transformedImputedDataByDate <- imputedActivityData[,list(total=sum(steps)),
-        by=date]
+transformedImputedDataByDate <- imputedActivityData[, list(total = sum(steps)),
+        by = date]
 stepsImputedMean <- round(mean(transformedImputedDataByDate$total))
 stepsImputedMedian <- round(median(transformedImputedDataByDate$total))
-ggplot(transformedImputedDataByDate, aes(x=total)) + geom_histogram(color=
-        "blue", fill="white",binwidth = 1000) + 
-        geom_vline(aes(xintercept=stepsMedian), color="red", linetype="dashed", 
-        size=1) + ylim(0, 18) + 
-        ggtitle("Total Number of Steps Taken Per Day: Missing Data Imputed") + 
-        xlab("Number of steps per day")+ ylab("Count")  + theme_bw()
+ggplot(transformedImputedDataByDate, aes(x = total)) + geom_histogram(color =
+        "blue", fill = "white", binwidth = 1000) + geom_vline(aes(
+        xintercept = stepsMedian), color = "red", linetype = "dashed", 
+        size = 1) + ylim(0, 18) + ggtitle(
+        "Total Number of Steps Taken Per Day: Missing Data Imputed") + 
+        xlab("Number of steps per day") + ylab("Count") + theme_bw()
 ```
 
 ![plot of chunk stepsbedayhistimputeNA](figure/stepsbedayhistimputeNA.png) 
@@ -123,9 +127,9 @@ transformedDataByDateImpute <- transformedImputedDataByDate
 transformedDataByDateImpute$datasource <- "Impute Missing"
 transformedDataByDateCombine <- rbind(transformedDataByDateRemove,
         transformedDataByDateImpute)
-ggplot(transformedDataByDateCombine, aes(x=total, fill=datasource)) + 
-        geom_histogram(color="black", binwidth=1000, alpha=.5, 
-        position="identity")+ xlab("Number of steps per day")+ ylab("Count") + 
+ggplot(transformedDataByDateCombine, aes(x = total, fill = datasource)) + 
+        geom_histogram(color = "black", binwidth = 1000, alpha = .5, 
+        position = "identity")+ xlab("Number of steps per day") + ylab("Count") + 
         theme_bw() + theme(legend.position = c(0.875, 0.9),
         legend.background = element_rect(color = "black", size = 1, 
         linetype = "solid"))
@@ -135,10 +139,9 @@ ggplot(transformedDataByDateCombine, aes(x=total, fill=datasource)) +
 
 Changes in mean and median as result of imputation were negligible.  For example,
 the preimutation mean and median were **10766** and **10765**, 
-respectively, while the postimputation mean and median were **10766**
-and **10766** respectively.
+steps respectively, while the postimputation mean and median were **10766** and **10766** steps respectively.
 
-These results are perhaps expected as often entire days worth of data went missing, and the imputed values were themselves derived from average figures. As a result, the missing days are simply substituted with the averages. 
+These results are perhaps expected as often entire days worth of data went missing from the original data set, and the imputed values were themselves derived from average figures. As a result, the imputed data were simply appended to the existing mean.  Perhaps a more sophisticated imputation approach is warranted.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
@@ -147,14 +150,16 @@ These results are perhaps expected as often entire days worth of data went missi
 ```r
 imputedActivityDataWeek <- imputedActivityData
 imputedActivityDataWeek$weekdayorweekend <- ifelse(weekdays(
-        imputedActivityDataWeek$date) %in% c('Saturday','Sunday'),"weekend", 
+        imputedActivityDataWeek$date) %in% c("Saturday", "Sunday"), "weekend", 
         "weekday")
-transformedimputedActivityDataWeek <- imputedActivityDataWeek[,list(
-        average=mean(steps)),by=list(interval, weekdayorweekend)]
-ggplot(transformedimputedActivityDataWeek,aes(x=interval,y=average))+ 
-        geom_line(color="blue")+ facet_wrap(~weekdayorweekend, ncol = 1) +
+transformedimputedActivityDataWeek <- imputedActivityDataWeek[, list(
+        average = mean(steps)), by = list(interval, weekdayorweekend)]
+ggplot(transformedimputedActivityDataWeek, aes(x = interval, y = average)) + 
+        geom_line(color = "blue")+ facet_wrap(~weekdayorweekend, ncol = 1) +
         ggtitle("Average Daily Activity Pattern: Weekday vs. Weekend") + 
-        ylab("Number of steps") + theme_bw() 
+        ylab("Number of steps") + xlab("Time of Day") + 
+        scale_x_datetime(labels = date_format("%H:%M"), breaks = 
+        date_breaks("2 hours")) + theme_bw() 
 ```
 
 ![plot of chunk avgdailypatternbydayofweek](figure/avgdailypatternbydayofweek.png) 
