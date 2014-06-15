@@ -1,10 +1,14 @@
 Reproducible Research Peer Assessment 1
 ========================================================
-
 ```{r computetime,echo=FALSE}
 time <- format(as.POSIXlt(Sys.time(), "GMT"), "%a %b %d %X %Y")
 ```
-This code was run on `r time` UTC.
+This markdown file was generated at `r time` UTC.
+
+## Introduction
+
+## Set Parameters and Load Data
+
 
 First the working directory was set
 
@@ -13,6 +17,8 @@ setwd("~/GitHub/RepData_PeerAssessment1-1")
 Sys.setlocale("LC_TIME", "English")
 require(data.table)
 require(ggplot2)
+options(scipen = 1, digits = 7)
+
 ```
 
 
@@ -29,32 +35,39 @@ activityData <- data.table(read.csv("activity.csv",header = TRUE, sep = ",",
         na.strings = "NA", colClasses=c("numeric","Date","numeric")))
 ```
 
+## What is mean total number of steps taken per day?
+
 Next we will determine what is the mean number of steps taken per day.
 
 ```{r}
 transformedDataByDate <- activityData[,list(total=sum(steps)),by=date]
-stepsMean <- mean(na.omit(transformedDataByDate$total))
-stepsMedian <- median(na.omit(transformedDataByDate$total))
-ggplot(transformedDataByDate, aes(x=total)) + geom_histogram(color="black", 
-        fill="white") + geom_vline(aes(xintercept=stepsMedian), color="red", 
-        linetype="dashed", size=1) + theme_bw()
+stepsMean <- mean(transformedDataByDate$total,na.rm=TRUE)
+stepsMedian <- median(transformedDataByDate$total,na.rm=TRUE)
+ggplot(transformedDataByDate, 
+        aes(x=total)) + geom_histogram(color="black", fill="white", binwidth = 1000) +  
+        geom_vline(aes(xintercept=stepsMedian), color="red", linetype="dashed",
+        size=1) + ylim(0, 18) + ggtitle("Total Number of Steps Taken Per Day: Missing Data Ignored") + xlab("Steps per day") + ylab("Count") + theme_bw()
 ```
 
 The mean number of steps taken per day is `r stepsMean`.
 The median number of steps taken per day is `r stepsMedian`.
+
+## What is the average daily activity pattern?
 
 Next sought to determine the average daily activity pattern.
 
 ```{r}
 transformedDataByInterval <- activityData[,list(average=mean(steps,na.rm=TRUE)),
         by=interval]
-ggplot(transformedDataByInterval,aes(x=interval,y=average))+ geom_line() + theme_bw()
+ggplot(transformedDataByInterval,aes(x=interval,y=average))+ geom_line() + ggtitle("Average Daily Activity Pattern")+ theme_bw()
 maxInterval<-transformedDataByInterval[which.max(transformedDataByInterval$average),
         interval]
 ```
 
 The 5-minute interval, on average across all the days in the dataset, containing 
 the maximum number of steps is `r maxInterval`.
+
+## Determing the effect of imputing missing values
 
 ```{r}
 numberNA <- length(is.na(activityData$steps)[is.na(activityData$steps)==TRUE])
@@ -74,8 +87,14 @@ transformedImputedDataByDate <- imputedActivityData[,list(total=sum(steps)),
 stepsImputedMean <- mean(na.omit(transformedImputedDataByDate$total))
 stepsImputedMedian <- median(na.omit(transformedImputedDataByDate$total))
 ggplot(transformedImputedDataByDate, aes(x=total)) + geom_histogram(color=
-        "black", fill="white") + geom_vline(aes(xintercept=stepsMedian), color=
-        "red", linetype="dashed", size=1) + theme_bw()
+        "black", fill="white",binwidth = 1000) + geom_vline(aes(xintercept=stepsMedian), 
+        color="red", linetype="dashed", size=1) + ylim(0, 18) + ggtitle("Total Number of Steps Taken Per Day: Missing Data Imputed") + xlab("Steps per day")+ ylab("Count")  + theme_bw()
+dataHis1 <- transformedDataByDate
+dataHis1$datasource <- "Remove Missing"
+dataHis2 <- transformedImputedDataByDate
+dataHis2$datasource <- "Impute Missing"
+dataHisBoth <- rbind(dataHis1,dataHis2)
+ggplot(dataHisBoth, aes(x=total, fill=datasource)) + geom_histogram(color="black", binwidth=1000, alpha=.5, position="identity")+ xlab("Steps per day")+ ylab("Count")   + theme_bw() + theme(legend.position = c(0.875, 0.9),legend.background=element_rect(color = "black", size = 1, linetype = "solid"))
 ```
 
 Changes in mean and median as result of imputation were negligible.  For example,
@@ -83,11 +102,9 @@ the preimutation mean and median were `r stepsMean` and `r stepsMedian`,
 respectively, while the postimputation mean and median were `r stepsImputedMean`
 and `r stepsImputedMedian` respectively.
 
-If we plot both preimputed and postimputed data together, we can see that ...
+If we plot both preimputed and postimputed data together, we can see that the bar in the histogram corresponding to the postion
 
-```{r}
-
-```
+## Are there differences in activity patterns between weekdays and weekends?
 
 Next, we sought to determine whether differences in the activity pattern existed
 between weekdays and weekends.
@@ -98,7 +115,7 @@ dataframe$weekdayorweekend <- ifelse(weekdays(dataframe$date) %in% c('Saturday',
         'Sunday'),"weekend", "weekday")
 SHIT <- dataframe[,list(average=mean(steps)),by=list(interval,
         weekdayorweekend)]
-ggplot(SHIT,aes(x=interval,y=average))+ geom_line()+ facet_grid(weekdayorweekend~.) + theme_bw()
+ggplot(SHIT,aes(x=interval,y=average))+ geom_line()+ facet_grid(weekdayorweekend~.) +ggtitle("Average Daily Activity Pattern: Weekday vs. Weekend") + theme_bw()
 ```
 
 

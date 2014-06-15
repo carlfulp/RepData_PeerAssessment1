@@ -1,8 +1,12 @@
 Reproducible Research Peer Assessment 1
 ========================================================
 
+This markdown file was generated at Sun Jun 15 5:42:15 AM 2014 UTC.
 
-This code was run on Sun Jun 15 1:31:50 AM 2014 UTC.
+## Introduction
+
+## Set Parameters and Load Data
+
 
 First the working directory was set
 
@@ -25,6 +29,10 @@ require(ggplot2)
 ## Loading required package: ggplot2
 ```
 
+```r
+options(scipen = 1, digits = 7)
+```
+
 
 Then, we will load in and preprocess the data.
 
@@ -40,26 +48,27 @@ activityData <- data.table(read.csv("activity.csv",header = TRUE, sep = ",",
         na.strings = "NA", colClasses=c("numeric","Date","numeric")))
 ```
 
+## What is mean total number of steps taken per day?
+
 Next we will determine what is the mean number of steps taken per day.
 
 
 ```r
 transformedDataByDate <- activityData[,list(total=sum(steps)),by=date]
-stepsMean <- mean(na.omit(transformedDataByDate$total))
-stepsMedian <- median(na.omit(transformedDataByDate$total))
-ggplot(transformedDataByDate, aes(x=total)) + geom_histogram(color="black", 
-        fill="white") + geom_vline(aes(xintercept=stepsMedian), color="red", 
-        linetype="dashed", size=1) + theme_bw()
-```
-
-```
-## stat_bin: binwidth defaulted to range/30. Use 'binwidth = x' to adjust this.
+stepsMean <- mean(transformedDataByDate$total,na.rm=TRUE)
+stepsMedian <- median(transformedDataByDate$total,na.rm=TRUE)
+ggplot(transformedDataByDate, 
+        aes(x=total)) + geom_histogram(color="black", fill="white", binwidth = 1000) +  
+        geom_vline(aes(xintercept=stepsMedian), color="red", linetype="dashed",
+        size=1) + ylim(0, 18) + ggtitle("Total Number of Steps Taken Per Day: Missing Data Ignored") + xlab("Steps per day") + ylab("Count") + theme_bw()
 ```
 
 ![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1.png) 
 
-The mean number of steps taken per day is 1.0766 &times; 10<sup>4</sup>.
-The median number of steps taken per day is 1.0765 &times; 10<sup>4</sup>.
+The mean number of steps taken per day is 10766.1886792.
+The median number of steps taken per day is 10765.
+
+## What is the average daily activity pattern?
 
 Next sought to determine the average daily activity pattern.
 
@@ -67,7 +76,7 @@ Next sought to determine the average daily activity pattern.
 ```r
 transformedDataByInterval <- activityData[,list(average=mean(steps,na.rm=TRUE)),
         by=interval]
-ggplot(transformedDataByInterval,aes(x=interval,y=average))+ geom_line() + theme_bw()
+ggplot(transformedDataByInterval,aes(x=interval,y=average))+ geom_line() + ggtitle("Average Daily Activity Pattern")+ theme_bw()
 ```
 
 ![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
@@ -79,6 +88,8 @@ maxInterval<-transformedDataByInterval[which.max(transformedDataByInterval$avera
 
 The 5-minute interval, on average across all the days in the dataset, containing 
 the maximum number of steps is 835.
+
+## Determing the effect of imputing missing values
 
 
 ```r
@@ -100,24 +111,31 @@ transformedImputedDataByDate <- imputedActivityData[,list(total=sum(steps)),
 stepsImputedMean <- mean(na.omit(transformedImputedDataByDate$total))
 stepsImputedMedian <- median(na.omit(transformedImputedDataByDate$total))
 ggplot(transformedImputedDataByDate, aes(x=total)) + geom_histogram(color=
-        "black", fill="white") + geom_vline(aes(xintercept=stepsMedian), color=
-        "red", linetype="dashed", size=1) + theme_bw()
+        "black", fill="white",binwidth = 1000) + geom_vline(aes(xintercept=stepsMedian), 
+        color="red", linetype="dashed", size=1) + ylim(0, 18) + ggtitle("Total Number of Steps Taken Per Day: Missing Data Imputed") + xlab("Steps per day")+ ylab("Count")  + theme_bw()
 ```
 
-```
-## stat_bin: binwidth defaulted to range/30. Use 'binwidth = x' to adjust this.
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-41.png) 
+
+```r
+dataHis1 <- transformedDataByDate
+dataHis1$datasource <- "Remove Missing"
+dataHis2 <- transformedImputedDataByDate
+dataHis2$datasource <- "Impute Missing"
+dataHisBoth <- rbind(dataHis1,dataHis2)
+ggplot(dataHisBoth, aes(x=total, fill=datasource)) + geom_histogram(color="black", binwidth=1000, alpha=.5, position="identity")+ xlab("Steps per day")+ ylab("Count")   + theme_bw() + theme(legend.position = c(0.875, 0.9),legend.background=element_rect(color = "black", size = 1, linetype = "solid"))
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-42.png) 
 
 Changes in mean and median as result of imputation were negligible.  For example,
-the preimutation mean and median were 1.0766 &times; 10<sup>4</sup> and 1.0765 &times; 10<sup>4</sup>, 
-respectively, while the postimputation mean and median were 1.0766 &times; 10<sup>4</sup>
-and 1.0766 &times; 10<sup>4</sup> respectively.
+the preimutation mean and median were 10766.1886792 and 10765, 
+respectively, while the postimputation mean and median were 10766.1886792
+and 10766.1886792 respectively.
 
-If we plot both preimputed and postimputed data together, we can see that ...
+If we plot both preimputed and postimputed data together, we can see that the bar in the histogram corresponding to the postion
 
-
+## Are there differences in activity patterns between weekdays and weekends?
 
 Next, we sought to determine whether differences in the activity pattern existed
 between weekdays and weekends.
@@ -129,10 +147,10 @@ dataframe$weekdayorweekend <- ifelse(weekdays(dataframe$date) %in% c('Saturday',
         'Sunday'),"weekend", "weekday")
 SHIT <- dataframe[,list(average=mean(steps)),by=list(interval,
         weekdayorweekend)]
-ggplot(SHIT,aes(x=interval,y=average))+ geom_line()+ facet_grid(weekdayorweekend~.) + theme_bw()
+ggplot(SHIT,aes(x=interval,y=average))+ geom_line()+ facet_grid(weekdayorweekend~.) +ggtitle("Average Daily Activity Pattern: Weekday vs. Weekend") + theme_bw()
 ```
 
-![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
 
 
 
