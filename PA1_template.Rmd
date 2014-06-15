@@ -73,8 +73,8 @@ maxInterval<-strftime(transformedDataByInterval[which.max(
 
 Next the average daily activity pattern was plotted.  
 
-The time, on average across all the days in the dataset, containing 
-the maximum number of steps occurs at **`r maxInterval`**.
+The 5- minute time interval, on average across all the days in the dataset, containing 
+the maximum number of steps ends at **`r maxInterval`**.
 
 
 ## Determing the effect of imputing missing values

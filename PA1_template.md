@@ -1,7 +1,7 @@
 Reproducible Research Peer Assessment 1
 ========================================================
 
-This markdown file was generated on Sun Jun 15 3:52:32 PM 2014 UTC using R version 3.0.3 (2014-03-06).
+This markdown file was generated on Sun Jun 15 4:07:16 PM 2014 UTC using R version 3.0.3 (2014-03-06).
 
 ## Introduction
 
@@ -80,8 +80,8 @@ maxInterval<-strftime(transformedDataByInterval[which.max(
 
 Next the average daily activity pattern was plotted.  
 
-The time, on average across all the days in the dataset, containing 
-the maximum number of steps occurs at **08:35**.
+The 5- minute time interval, on average across all the days in the dataset, containing 
+the maximum number of steps ends at **08:35**.
 
 
 ## Determing the effect of imputing missing values
