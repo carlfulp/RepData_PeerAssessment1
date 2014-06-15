@@ -1,13 +1,14 @@
 Reproducible Research Peer Assessment 1
 ========================================================
 
-This markdown file was generated at Sun Jun 15 7:04:02 AM 2014 UTC.
+This markdown file was generated at Sun Jun 15 7:36:54 AM 2014 UTC.
 
 ## Introduction
 
 This assignment was completed to fulfill part of the requirements of the Johns Hopkins University Reproducible Research course.  The purpose is to demonstrate the use of the [knitr](http://cran.r-project.org/web/packages/knitr/) package as a means to achieve literate statistcal programming.
 
 This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
 
 ## Set parameters, load in and preprocess the data
 
@@ -28,7 +29,8 @@ activityData <- data.table(read.csv("activity.csv",header = TRUE, sep = ",",
         na.strings = "NA", colClasses=c("numeric","Date","numeric")))
 ```
 
-First the working directory was established.  Note: if the reader wishes to execute the code herein, he/she may need to change the working directory.  Next two packages are loaded: [data.table](http://cran.r-project.org/web/packages/data.table/index.html) for efficient processing of data tables and [ggplot2](http://ggplot2.org/) for producing the plots. Finally the data were downloaded and loaded in as a data.table.
+First the working directory was established.  *Note: if the reader wishes to execute the code herein, he/she may need to change the working directory.*  Next two packages are loaded: [data.table](http://cran.r-project.org/web/packages/data.table/index.html) for efficient processing of data tables and [ggplot2](http://ggplot2.org/) for producing the plots. Finally the data were downloaded and loaded in as a data.table.
+
 
 ## What is mean total number of steps taken per day?
 
@@ -44,13 +46,14 @@ ggplot(transformedDataByDate, aes(x=total)) + geom_histogram(color="blue", fill
         xlab("Number of steps per day") + ylab("Count") + theme_bw()
 ```
 
-![plot of chunk stepsbedayhist](figure/stepsbedayhist.png) 
+![plot of chunk stepsbedayhistNAomit](figure/stepsbedayhistNAomit.png) 
 
 
 Next the data was transformed, plotted, and the mean and median number of steps per day were calculated.  In this particular case, any missing values within the data were simply ignored.
 
-The mean number of steps, rounded to the neareste step, taken per day was **10766**.
-The median number of steps, rounded to the neareste step,  taken per day was **10765**.
+The mean number of steps, rounded to the nearest step, taken per day was **10766**.
+The median number of steps, rounded to the nearest step,  taken per day was **10765**.
+
 
 ## What is the average daily activity pattern?
 
@@ -63,7 +66,7 @@ ggplot(transformedDataByInterval,aes(x=interval,y=average))+
         ylab("Number of Steps") + theme_bw()
 ```
 
-![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1.png) 
+![plot of chunk avgdailypattern](figure/avgdailypattern.png) 
 
 ```r
 maxInterval<-transformedDataByInterval[which.max(transformedDataByInterval$average),
@@ -75,6 +78,7 @@ Next the average daily activity pattern was plotted.
 
 The 5-minute interval, on average across all the days in the dataset, containing 
 the maximum number of steps is the interval between **830  and  835** seconds.
+
 
 ## Determing the effect of imputing missing values
 
@@ -107,7 +111,7 @@ ggplot(transformedImputedDataByDate, aes(x=total)) + geom_histogram(color=
         xlab("Number of steps per day")+ ylab("Count")  + theme_bw()
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
+![plot of chunk stepsbedayhistimputeNA](figure/stepsbedayhistimputeNA.png) 
 
 Then the histograms corresponding to missing values that were ignored and missing values that were imputed were overlaid to visualize the results of imputation. 
 
@@ -127,7 +131,7 @@ ggplot(transformedDataByDateCombine, aes(x=total, fill=datasource)) +
         linetype = "solid"))
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+![plot of chunk stepsbedayhistomitandimputeNA](figure/stepsbedayhistomitandimputeNA.png) 
 
 Changes in mean and median as result of imputation were negligible.  For example,
 the preimutation mean and median were **10766** and **10765**, 
@@ -136,18 +140,24 @@ and **10766** respectively.
 
 These results are perhaps expected as often entire days worth of data went missing, and the imputed values were themselves derived from average figures. As a result, the missing days are simply substituted with the averages. 
 
+
 ## Are there differences in activity patterns between weekdays and weekends?
 
 
 ```r
 imputedActivityDataWeek <- imputedActivityData
-imputedActivityDataWeek$weekdayorweekend <- ifelse(weekdays(imputedActivityDataWeek$date) %in% c('Saturday','Sunday'),"weekend", "weekday")
-transformedimputedActivityDataWeek <- imputedActivityDataWeek[,list(average=mean(steps)),by=list(interval,
-        weekdayorweekend)]
-ggplot(transformedimputedActivityDataWeek,aes(x=interval,y=average))+ geom_line(color="blue")+ facet_grid(weekdayorweekend~.) +ggtitle("Average Daily Activity Pattern: Weekday vs. Weekend") + theme_bw()
+imputedActivityDataWeek$weekdayorweekend <- ifelse(weekdays(
+        imputedActivityDataWeek$date) %in% c('Saturday','Sunday'),"weekend", 
+        "weekday")
+transformedimputedActivityDataWeek <- imputedActivityDataWeek[,list(
+        average=mean(steps)),by=list(interval, weekdayorweekend)]
+ggplot(transformedimputedActivityDataWeek,aes(x=interval,y=average))+ 
+        geom_line(color="blue")+ facet_wrap(~weekdayorweekend, ncol = 1) +
+        ggtitle("Average Daily Activity Pattern: Weekday vs. Weekend") + 
+        ylab("Number of steps") + theme_bw() 
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+![plot of chunk avgdailypatternbydayofweek](figure/avgdailypatternbydayofweek.png) 
 
 Next, we sought to determine whether differences in the activity pattern existed
 between weekdays and weekends.  Average daily activity data were stratified by weekday or weekend and then replotted.  While the periods of inactivity were similar regardless of the days of the week, the periodocity of activity during active periods were clearly different.
